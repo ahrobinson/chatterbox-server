@@ -12,8 +12,10 @@ this file and include it in basic-server.js so that it actually works.
 
 **************************************************************/
 
+var url = require("url");   //**
+var posts = {results:[]};
 var requestHandler = function(request, response) {
-  var posts = {results:[]}
+
   // Request and Response come from node's http module.
   //
   // They include information about both the incoming request, such as
@@ -29,13 +31,17 @@ var requestHandler = function(request, response) {
   // debugging help, but you should always be careful about leaving stray
   // console.logs in your code.
   console.log("Serving request type " + request.method + " for url " + request.url);
-
+  //console.log(response)
   // The outgoing status.
   var statusCode = 200;
 
+  if (request.url.slice(0,8) !== '/classes') {
+    response.writeHead(404, headers);
+    response.end();
+  }
+
   // See the note below about CORS headers.
   var headers = defaultCorsHeaders;
-
 
   // .writeHead() writes to the request line and headers of the response,
   // which includes the status and all headers.
@@ -53,26 +59,26 @@ var requestHandler = function(request, response) {
   //
   // You will need to change this if you are sending something
   // other than plain text, like JSON or HTML.
-  headers['Content-Type'] = "text/plain";
+  headers['Content-Type'] = "application/json";
 
   if (request.method === 'POST') {
-        var body = '';
-        request.on('data', function (data) {
-            body += data;
-            console.log(body)
-        });
-        request.on('end', function(){
-          var post = JSON.parse(body);
-          posts.results.push(post);
-        })
+    response.writeHead(201, headers);
+    var body = '';
+    request.on('data', function (data) {
+      body += data;
+      //console.log(body)
+    });
+    request.on('end', function(){
+      var post = body;
+      posts.results.push(JSON.parse(post));
+    })
+    response.end(JSON.stringify(posts))
   }
 
 
 
-  if(request.url === '/' && request.method === 'GET'){
-    response.end('the end!')
-  } else if(request.url === '/classes/chatterbox' && request.method === 'GET'){
-    response.end('hello')
+  if(request.method === 'GET'){
+    response.end(JSON.stringify(posts))
   }
   /*
   var fakeResponse = {results: [{roomname: 'lobby', username: 'joe', text: 'hey'},
