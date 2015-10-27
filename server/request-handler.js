@@ -13,6 +13,7 @@ this file and include it in basic-server.js so that it actually works.
 **************************************************************/
 
 var requestHandler = function(request, response) {
+  var posts = {results:[]}
   // Request and Response come from node's http module.
   //
   // They include information about both the incoming request, such as
@@ -35,15 +36,48 @@ var requestHandler = function(request, response) {
   // See the note below about CORS headers.
   var headers = defaultCorsHeaders;
 
+
+  // .writeHead() writes to the request line and headers of the response,
+  // which includes the status and all headers.
+  response.writeHead(statusCode, headers);
+
+  var fakeResponse = {
+      results: [
+            {roomname: 'lobby', username: 'joe', text: 'hey'},
+            {roomname: 'kitchen', username: 'alon', text: 'what is up'}
+            ]
+  };
+
+
   // Tell the client we are sending them plain text.
   //
   // You will need to change this if you are sending something
   // other than plain text, like JSON or HTML.
   headers['Content-Type'] = "text/plain";
 
-  // .writeHead() writes to the request line and headers of the response,
-  // which includes the status and all headers.
-  response.writeHead(statusCode, headers);
+  if (request.method === 'POST') {
+        var body = '';
+        request.on('data', function (data) {
+            body += data;
+            console.log(body)
+        });
+        request.on('end', function(){
+          var post = JSON.parse(body);
+          posts.results.push(post);
+        })
+  }
+
+
+
+  if(request.url === '/' && request.method === 'GET'){
+    response.end('the end!')
+  } else if(request.url === '/classes/chatterbox' && request.method === 'GET'){
+    response.end('hello')
+  }
+  /*
+  var fakeResponse = {results: [{roomname: 'lobby', username: 'joe', text: 'hey'},
+    {roomname: 'kitchen', username: 'alon', text: 'what is up'}]}
+  */
 
   // Make sure to always call response.end() - Node may not send
   // anything back to the client until you do. The string you pass to
@@ -68,6 +102,8 @@ var defaultCorsHeaders = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
   "access-control-allow-headers": "content-type, accept",
-  "access-control-max-age": 10 // Seconds.
+  "access-control-max-age": 10, // Seconds.
+  "Content-Type": "application/json"  //added this??
 };
 
+exports.requestHandler = requestHandler;
